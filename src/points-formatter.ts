@@ -2,6 +2,8 @@
   let cleanupHistoryListener: () => void;
   let targetNode: Element | null = null;
   let _instance: any;
+  let oldBalance: number = -1;
+  let timeoutTimer: string | number | NodeJS.Timeout | null | undefined = null;
 
   const intervalIds: any[] = [];
   const config: MutationObserverInit = {
@@ -31,23 +33,61 @@
       formatPoints();
   };
 
-  const formatPoints = (): void => {
-    if (targetNode !== null && targetNode.firstChild && targetNode.firstChild.firstChild) {
-      const balance = parseInt(findReactProp(_instance._internalRoot.current, 'balance'), 10);
-      if (balance !== null && !isNaN(balance)) {
-        const oldValue = targetNode.firstChild.firstChild.nodeValue;
-        const newValue = new Intl.NumberFormat().format(balance);
-        if (oldValue !== newValue) {
-          targetNode.firstChild.firstChild.nodeValue = newValue;
+  const formatPoints = (firstTime: boolean = false): void => {
+    if (targetNode !== null && targetNode.firstChild && targetNode.firstChild.firstChild && oldBalance > 0)
+      targetNode.firstChild.firstChild.nodeValue = new Intl.NumberFormat().format(oldBalance);
+
+    if (timeoutTimer)
+      clearTimeout(timeoutTimer);
+
+    timeoutTimer = setTimeout(() => {
+      if (targetNode !== null && targetNode.firstChild && targetNode.firstChild.firstChild) {
+        const balance = parseInt(findReactProp(_instance._internalRoot.current, 'balance'), 10);
+        if (balance !== null && !isNaN(balance) && oldBalance !== balance) {
+          if (firstTime) {
+            oldBalance = balance;
+            targetNode.firstChild.firstChild.nodeValue = new Intl.NumberFormat().format(balance);
+            return;
+          }
+
+          const diff = balance - oldBalance;
+          const isPositive = balance > oldBalance;
+
+          let fps = 1000 / 60,
+            duration = 1000,
+            increment = Math.floor((Math.abs(diff) / duration) * fps),
+            currVal = 0,
+            update: string | number | NodeJS.Timeout | null | undefined = null;
+
+          if (increment < 1) {
+            increment = 1;
+            fps = 1000 / diff;
+          }
+          console.info(increment, fps, oldBalance, balance);
+
+          //Setup the interval
+          update = setInterval(() => {
+            if (currVal < diff) {
+              currVal += increment;
+              oldBalance = (isPositive) ? oldBalance + increment : oldBalance - increment;
+            } else {
+              oldBalance = balance;
+              if (update)
+                clearInterval(update);
+            }
+
+            if (targetNode !== null && targetNode.firstChild && targetNode.firstChild.firstChild)
+              targetNode.firstChild.firstChild.nodeValue = new Intl.NumberFormat().format(oldBalance);
+          }, fps);
         }
       }
-    }
+    }, 100);
   };
   const findPointsContainer = (): void => {
     const timer = setInterval(function () {
       targetNode = document.querySelector('div[data-test-selector="balance-string"]');
       if (targetNode !== null) {
-        formatPoints();
+        formatPoints(true);
 
         // Observe for updated channel points
         observer.observe(targetNode, config);
