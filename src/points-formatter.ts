@@ -50,12 +50,12 @@
             return;
           }
 
-          const diff = balance - oldBalance;
-          const isPositive = balance > oldBalance;
+          const diff = Math.abs(balance - oldBalance);
+          const multipllier = balance > oldBalance ? 1 : -1;
 
           let fps = 1000 / 60,
             duration = 1000,
-            increment = Math.floor((Math.abs(diff) / duration) * fps),
+            increment = Math.floor((diff / duration) * fps),
             currVal = 0,
             update: string | number | NodeJS.Timeout | null | undefined = null;
 
@@ -69,7 +69,7 @@
           update = setInterval(() => {
             if (currVal < diff) {
               currVal += increment;
-              oldBalance = (isPositive) ? oldBalance + increment : oldBalance - increment;
+              oldBalance += (increment * multipllier);
             } else {
               oldBalance = balance;
               if (update)
