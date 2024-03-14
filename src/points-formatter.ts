@@ -34,7 +34,7 @@
   };
 
   const formatPoints = (firstTime: boolean = false): void => {
-    if (targetNode !== null && targetNode.firstChild && targetNode.firstChild.firstChild && oldBalance > 0)
+    if (targetNode !== null && targetNode.firstChild && targetNode.firstChild.firstChild && oldBalance >= 0)
       targetNode.firstChild.firstChild.nodeValue = new Intl.NumberFormat().format(oldBalance);
 
     if (timeoutTimer)
@@ -42,7 +42,7 @@
 
     timeoutTimer = setTimeout(() => {
       if (targetNode !== null && targetNode.firstChild && targetNode.firstChild.firstChild) {
-        const balance = parseInt(findReactProp(_instance._internalRoot.current, 'balance'), 10);
+        const balance = parseInt(findReactProp(_instance, 'balance'), 10);
         if (balance !== null && !isNaN(balance) && oldBalance !== balance) {
           if (firstTime) {
             oldBalance = balance;
@@ -140,18 +140,18 @@
   const hookIntoReact = async () => {
     // Find the root instance 
     console.log('Finding react');
-    const instance = await findReact('root', '_reactRootContainer');
-    if (instance._internalRoot && instance._internalRoot.current) {
+    const instance = await findReact('root', '__reactContainer');
+    if (instance) {
       _instance = instance;
 
       // Hook into router
-      const history = findReactProp(instance._internalRoot.current, 'history');
+      const history = findReactProp(instance, 'history');
       if (history)
         navigationHook(history);
 
       // Determine if the channel has points enabled (May take some time to load)
       const timer = setInterval(() => {
-        const enabled = findReactProp(instance._internalRoot.current, 'isChannelPointsEnabled');
+        const enabled = findReactProp(instance, 'isChannelPointsEnabled');
         if (enabled)
           findPointsContainer();
 
