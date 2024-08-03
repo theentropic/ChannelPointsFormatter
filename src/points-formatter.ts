@@ -85,7 +85,7 @@
   };
   const findPointsContainer = (): void => {
     const timer = setInterval(function () {
-      targetNode = document.querySelectorAll('div[data-test-selector="balance-string"]')[1];
+      targetNode = document.querySelector('div[data-test-selector="copo-balance-string"]');
       if (targetNode !== null) {
         formatPoints(true);
 
